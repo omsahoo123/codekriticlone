@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
+import { TimerPicker } from '@/components/TimerPicker';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
   const [newCriteria, setNewCriteria] = useState({ name: '', max_score: 10 });
   const [teamPassword, setTeamPassword] = useState('');
   const [timerEnd, setTimerEnd] = useState('');
+  const [showTimerPicker, setShowTimerPicker] = useState(false);
 
   useEffect(() => {
     const { role } = getStoredAuth();
@@ -122,10 +124,30 @@ export default function AdminDashboard() {
     }
     try {
       await api.post('/admin/timer', {
-        end_time: new Date(timerEnd).toISOString(),
+        end_time: timerEnd,
         is_active: true,
       });
       toast.success('Timer started');
+      setShowTimerPicker(false);
+      loadData();
+    } catch (error) {
+      toast.error('Failed to start timer');
+    }
+  };
+
+  const handleTimerConfirm = (dateTime) => {
+    setTimerEnd(dateTime);
+    handleStartTimerWithDateTime(dateTime);
+  };
+
+  const handleStartTimerWithDateTime = async (dateTime) => {
+    try {
+      await api.post('/admin/timer', {
+        end_time: dateTime,
+        is_active: true,
+      });
+      toast.success('Timer started successfully!');
+      setShowTimerPicker(false);
       loadData();
     } catch (error) {
       toast.error('Failed to start timer');
@@ -486,6 +508,9 @@ export default function AdminDashboard() {
                     {Math.floor(((timer.time_remaining || 0) % 3600) / 60)}m{' '}
                     {(timer.time_remaining || 0) % 60}s
                   </div>
+                  <p className="text-sm text-slate-400 mt-4">
+                    Ends at: {new Date(timer.end_time).toLocaleString()}
+                  </p>
                   <Button
                     onClick={handleStopTimer}
                     data-testid="stop-timer-btn"
@@ -499,24 +524,23 @@ export default function AdminDashboard() {
 
               {!timer?.is_active && (
                 <div className="space-y-4">
-                  <div>
-                    <Label className="text-slate-300">End Time</Label>
-                    <Input
-                      data-testid="timer-end-input"
-                      type="datetime-local"
-                      value={timerEnd}
-                      onChange={(e) => setTimerEnd(e.target.value)}
-                      className="input-ocean"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleStartTimer}
-                    data-testid="start-timer-btn"
-                    className="btn-primary w-full"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Timer
-                  </Button>
+                  {!showTimerPicker ? (
+                    <Button
+                      onClick={() => setShowTimerPicker(true)}
+                      data-testid="open-timer-picker-btn"
+                      className="btn-primary w-full"
+                    >
+                      <Timer className="w-4 h-4 mr-2" />
+                      Set Hackathon End Time
+                    </Button>
+                  ) : (
+                    <div className="bg-slate-800/50 rounded-lg p-6">
+                      <TimerPicker
+                        onConfirm={handleTimerConfirm}
+                        onCancel={() => setShowTimerPicker(false)}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

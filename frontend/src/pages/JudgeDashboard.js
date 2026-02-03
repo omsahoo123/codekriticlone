@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getStoredAuth, clearAuth } from '@/utils/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { toast } from 'sonner';
 import { Users, LogOut, Star, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,17 +23,9 @@ export default function JudgeDashboard() {
   const [activeTab, setActiveTab] = useState('teams');
   const [scoringTeam, setScoringTeam] = useState(null);
   const [scores, setScores] = useState({});
+  const { identifier } = getStoredAuth();
 
-  useEffect(() => {
-    const { role } = getStoredAuth();
-    if (role !== 'judge') {
-      navigate('/');
-      return;
-    }
-    loadData();
-  }, [navigate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [teamsRes, criteriaRes, leaderboardRes] = await Promise.all([
         api.get('/judge/teams'),
@@ -46,7 +39,25 @@ export default function JudgeDashboard() {
     } catch (error) {
       toast.error('Failed to load data');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const { role } = getStoredAuth();
+    if (role !== 'judge') {
+      navigate('/');
+      return;
+    }
+    loadData();
+  }, [navigate, loadData]);
+
+  const handleWebSocketMessage = useCallback((message) => {
+    if (message.type === 'score_update' || message.type === 'leaderboard_update') {
+      loadData();
+    }
+  }, [loadData]);
+
+  // Use WebSocket for real-time updates
+  useWebSocket(identifier, 'judge', handleWebSocketMessage);
 
   const handleOpenScoring = (team) => {
     setScoringTeam(team);

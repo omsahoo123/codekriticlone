@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, File, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,9 +12,14 @@ from typing import List, Optional, Dict
 from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
+from websocket_manager import manager
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Setup upload directory
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -21,6 +27,9 @@ db = client[os.environ['DB_NAME']]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
+
+# Mount uploads directory for static file serving
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -77,6 +86,7 @@ class TeamProfile(BaseModel):
     team_name: str
     leader_name: Optional[str] = None
     members: Optional[List[str]] = None
+    members_details: Optional[List[Dict]] = None
     project_name: Optional[str] = None
     project_description: Optional[str] = None
     project_url: Optional[str] = None
@@ -341,6 +351,14 @@ async def submit_score(score_data: ScoreSubmit, payload: dict = Depends(verify_t
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
     
+    # Broadcast score update to all connected clients
+    await manager.broadcast_score_update({
+        "team_name": score_data.team_name,
+        "judge_id": judge_id,
+        "scores": score_data.scores,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
     return {"message": "Score submitted successfully"}
 
 @api_router.get("/judge/leaderboard", response_model=List[LeaderboardEntry])
@@ -438,6 +456,43 @@ async def get_team_timer(payload: dict = Depends(verify_token)):
         "time_remaining": time_remaining
     }
 
+@api_router.post("/team/upload-photo")
+async def upload_photo(file: UploadFile = File(...), payload: dict = Depends(verify_token)):
+    if payload.get("role") != "team":
+        raise HTTPException(status_code=403, detail="Team access required")
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Allowed: JPG, PNG, WebP")
+    
+    # Validate file size (5MB)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max size: 5MB")
+    
+    # Save file
+    team_name = payload.get("identifier")
+    # Sanitize filename
+    filename = f"{team_name}_{file.filename}".replace(" ", "_")
+    filepath = UPLOAD_DIR / filename
+    
+    try:
+        with open(filepath, "wb") as f:
+            f.write(contents)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    
+    # Update team profile with photo URL
+    photo_url = f"/uploads/{filename}"
+    await db.teams.update_one(
+        {"team_name": team_name},
+        {"$set": {"photo_url": photo_url}},
+        upsert=True
+    )
+    
+    return {"photo_url": photo_url, "message": "Photo uploaded successfully"}
+
 @api_router.get("/public/leaderboard", response_model=List[LeaderboardEntry])
 async def get_public_leaderboard():
     teams = await db.teams.find({}, {"_id": 0}).to_list(1000)
@@ -459,6 +514,18 @@ async def get_public_leaderboard():
         entry["rank"] = i + 1
     
     return leaderboard
+
+# WebSocket Endpoint
+@app.websocket("/ws/{user_id}/{role}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str, role: str):
+    """WebSocket endpoint for real-time updates"""
+    await manager.connect(websocket, user_id, role)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # Handle incoming messages if needed
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id, role)
 
 app.include_router(api_router)
 

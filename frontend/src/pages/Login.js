@@ -42,8 +42,8 @@ export default function Login() {
         {/* Left Section */}
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-5xl md:text-6xl font-black text-white glow-text">
-              HackathonHub
+            <h1 className="text-6xl md:text-7xl font-black text-white glow-text" style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+              CODEKRITI4.O
             </h1>
             <p className="text-xl text-slate-300">
               Dive into the depths of innovation

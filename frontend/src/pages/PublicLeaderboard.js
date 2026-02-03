@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/utils/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { Trophy, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,18 +10,27 @@ export default function PublicLeaderboard() {
   const navigate = useNavigate();
   const [leaderboard, setLeaderboard] = useState([]);
 
-  useEffect(() => {
-    loadLeaderboard();
-  }, []);
-
-  const loadLeaderboard = async () => {
+  const loadLeaderboard = useCallback(async () => {
     try {
       const response = await api.get('/public/leaderboard');
       setLeaderboard(response.data);
     } catch (error) {
       console.error('Failed to load leaderboard');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  const handleWebSocketMessage = useCallback((message) => {
+    if (message.type === 'score_update' || message.type === 'leaderboard_update') {
+      loadLeaderboard();
+    }
+  }, [loadLeaderboard]);
+
+  // Use WebSocket for real-time updates (public user)
+  useWebSocket('public', 'public', handleWebSocketMessage);
 
   return (
     <div className="ocean-bg min-h-screen">
