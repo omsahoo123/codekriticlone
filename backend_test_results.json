@@ -1,0 +1,103 @@
+{
+  "timestamp": "2026-02-03T13:35:51.630329",
+  "total_tests": 19,
+  "passed_tests": 19,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "Admin Login",
+      "status": "PASS",
+      "details": "Token received, role: admin"
+    },
+    {
+      "test": "Create Judge",
+      "status": "PASS",
+      "details": "Judge created: Test Judge"
+    },
+    {
+      "test": "Get Judges",
+      "status": "PASS",
+      "details": "Found 1 judges"
+    },
+    {
+      "test": "Create Criteria",
+      "status": "PASS",
+      "details": "Criteria created: Innovation"
+    },
+    {
+      "test": "Get Criteria",
+      "status": "PASS",
+      "details": "Found 1 criteria"
+    },
+    {
+      "test": "Set Team Password",
+      "status": "PASS",
+      "details": "Team password set successfully"
+    },
+    {
+      "test": "Start Timer",
+      "status": "PASS",
+      "details": "Timer active: True"
+    },
+    {
+      "test": "Get Timer Status",
+      "status": "PASS",
+      "details": "Active: True"
+    },
+    {
+      "test": "Admin Leaderboard",
+      "status": "PASS",
+      "details": "Found 0 teams"
+    },
+    {
+      "test": "Judge Login",
+      "status": "PASS",
+      "details": "Token received, role: judge"
+    },
+    {
+      "test": "Judge Get Teams",
+      "status": "PASS",
+      "details": "Found 0 teams"
+    },
+    {
+      "test": "Judge Get Criteria",
+      "status": "PASS",
+      "details": "Found 1 criteria"
+    },
+    {
+      "test": "Submit Score",
+      "status": "PASS",
+      "details": "Score submitted successfully"
+    },
+    {
+      "test": "Team Login",
+      "status": "PASS",
+      "details": "Token received, role: team"
+    },
+    {
+      "test": "Get Team Profile",
+      "status": "PASS",
+      "details": "Team: TestTeam"
+    },
+    {
+      "test": "Update Team Profile",
+      "status": "PASS",
+      "details": "Profile updated successfully"
+    },
+    {
+      "test": "Get Team Timer",
+      "status": "PASS",
+      "details": "Timer active: True"
+    },
+    {
+      "test": "Get Team Score",
+      "status": "PASS",
+      "details": "Score: 8.0"
+    },
+    {
+      "test": "Public Leaderboard",
+      "status": "PASS",
+      "details": "Found 1 teams"
+    }
+  ]
+}
