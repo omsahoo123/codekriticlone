@@ -1,0 +1,101 @@
+HOW TO USE YOUR OWN MONGODB
+
+=============================================================================
+OPTION 1: MONGODB ATLAS (Cloud - Recommended)
+=============================================================================
+
+Step 1: Create MongoDB Atlas Account
+  1. Go to https://www.mongodb.com/cloud/atlas
+  2. Sign up for free account
+  3. Create a new project
+
+Step 2: Create a Cluster
+  1. Click "Create" to create a new cluster
+  2. Choose "Free" tier
+  3. Select your region
+  4. Click "Create Cluster"
+
+Step 3: Get Connection String
+  1. Click "Connect" on your cluster
+  2. Choose "Drivers"
+  3. Select "Node.js" and version 4.0 or later
+  4. Copy the connection string
+  5. It will look like:
+     mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
+
+Step 4: Update .env File
+  1. Open: frontend/backend/.env
+  2. Replace MONGO_URL with your connection string
+  3. Replace YOUR_USERNAME with your MongoDB username
+  4. Replace YOUR_PASSWORD with your MongoDB password
+  5. Replace YOUR_CLUSTER with your cluster name
+
+Example:
+  MONGO_URL="mongodb+srv://john:mypassword123@cluster0.abc123.mongodb.net/?retryWrites=true&w=majority"
+
+Step 5: Restart Application
+  1. Stop the current process (Ctrl+C)
+  2. Run: node start.js
+  3. Done!
+
+=============================================================================
+OPTION 2: LOCAL MONGODB
+=============================================================================
+
+If you have MongoDB installed locally:
+
+Step 1: Install MongoDB
+  Download from: https://www.mongodb.com/try/download/community
+
+Step 2: Start MongoDB Service
+  Windows:
+    mongod
+
+  Mac:
+    brew services start mongodb-community
+
+  Linux:
+    sudo systemctl start mongod
+
+Step 3: Update .env File
+  MONGO_URL="mongodb://localhost:27017"
+  DB_NAME="codekriti4o"
+
+Step 4: Restart Application
+  node start.js
+
+=============================================================================
+CURRENT CONFIGURATION
+=============================================================================
+
+File: frontend/backend/.env
+
+MONGO_URL="mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/?retryWrites=true&w=majority"
+DB_NAME="codekriti4o"
+CORS_ORIGINS="*"
+JWT_SECRET_KEY="hackathon-secret-key-change-in-production-123456"
+
+Replace:
+  - YOUR_USERNAME: Your MongoDB username
+  - YOUR_PASSWORD: Your MongoDB password
+  - YOUR_CLUSTER: Your cluster name (e.g., cluster0.abc123)
+
+=============================================================================
+TROUBLESHOOTING
+=============================================================================
+
+If connection fails:
+  1. Check username and password are correct
+  2. Check cluster name is correct
+  3. Make sure IP address is whitelisted in MongoDB Atlas
+  4. Check database name exists
+
+If you see "connection refused":
+  1. Make sure MongoDB is running
+  2. Check port 27017 is not blocked
+  3. Try local MongoDB first to test
+
+=============================================================================
+
+After updating .env, restart the application and it will use your MongoDB!
+

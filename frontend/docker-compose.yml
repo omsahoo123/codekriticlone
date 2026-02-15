@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: codekriti-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: codekriti
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/codekriti --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: codekriti-backend
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URL: mongodb://mongodb:27017
+      DB_NAME: codekriti
+      CORS_ORIGINS: "http://localhost:3000"
+      JWT_SECRET_KEY: codekriti-secret-key-change-in-production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: python -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codekriti-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_BACKEND_URL: http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: npm start
+
+volumes:
+  mongodb_data:
+
+networks:
+  default:
+    name: codekriti-network
